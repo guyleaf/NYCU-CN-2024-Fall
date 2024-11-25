@@ -1,0 +1,66 @@
+[
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.1/32",
+        "ipProto": "TCP",
+        "dstTpPort": 22,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.1/32",
+        "ipProto": "TCP",
+        "dstTpPort": 80,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.1/32",
+        "ipProto": "UDP",
+        "dstTpPort": 22,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.1/32",
+        "ipProto": "UDP",
+        "dstTpPort": 80,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.2/32",
+        "ipProto": "TCP",
+        "dstTpPort": 22,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.2/32",
+        "ipProto": "TCP",
+        "dstTpPort": 80,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.2/32",
+        "ipProto": "UDP",
+        "dstTpPort": 22,
+        "action": "allow"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "dstIp": "10.0.0.2/32",
+        "ipProto": "UDP",
+        "dstTpPort": 80,
+        "action": "allow"
+    },
+    {
+        "dstIp": "10.0.0.4/32",
+        "action": "deny"
+    },
+    {
+        "srcIp": "10.0.0.4/32",
+        "action": "deny"
+    }
+]

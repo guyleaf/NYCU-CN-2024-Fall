@@ -83,16 +83,20 @@ if __name__ == "__main__":
     else:
         setLogLevel("info")
 
-    # contruct network
+    # construct network
     topo = Lab1Topo()
     controller = partial(RemoteController, ip=args.ip, port=args.port)
-    switch = partial(OVSSwitch, protocols=args.openflow_version)
+    switch = partial(
+        OVSSwitch, protocols=args.openflow_version, failMode="standalone", stp=True
+    )
     net = Mininet(
         topo=topo,
         controller=controller,
         switch=switch,
         xterms=args.debug,
         waitConnected=True,
+        # fix mac addresses for keeping the intents or rules
+        # autoSetMacs=True,
     )
 
     # run tests

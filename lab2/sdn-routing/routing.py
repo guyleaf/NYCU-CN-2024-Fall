@@ -74,7 +74,18 @@ class RoutingVNF:
             self._remove_link(subject)
 
     def _handle_device_event(self, data: dict):
-        pass
+        event_type = data["type"]
+        subject = data["subject"]
+
+        if event_type == "DEVICE_ADDED":
+            self._add_device(subject)
+        elif event_type == "DEVICE_REMOVED":
+            self._remove_device(subject)
+        elif event_type == "DEVICE_AVAILABILITY_CHANGED":
+            if data["availability"]:
+                self._add_device(subject)
+            else:
+                self._remove_device(subject)
 
     def _handle_host_event(self, data: dict):
         event_type = data["type"]
@@ -94,18 +105,31 @@ class RoutingVNF:
         dst = link["dst"]["id"]
         port = link["src"]["port"]
 
+        # one connection has bidirectional links
+        # so, we only save the source port
         self.net.add_edge(src, dst, port=port)
         self.print("Data:", src, dst, port)
         self.print("Link 1 (Add):", src, dst, self.net[src][dst]["port"])
-        if dst in self.net and src in self.net[dst]:
+        if (dst, src) in self.net.edges:
             self.print("Link 2 (Add):", dst, src, self.net[dst][src]["port"])
 
     def _remove_link(self, link: dict):
         src = link["src"]["id"]
         dst = link["dst"]["id"]
-        if src in self.net:
+        if (src, dst) in self.net.edges:
             self.print("Link (Remove):", src, dst, self.net[src][dst]["port"])
             self.net.remove_edge(src, dst)
+
+    def _add_device(self, device: dict):
+        device_id = device["id"]
+        self.net.add_node(device_id)
+        self.print("Device (Add):", device_id)
+
+    def _remove_device(self, device: dict):
+        device_id = device["id"]
+        if device_id in self.net:
+            self.net.remove_node(device_id)
+            self.print("Device (Remove):", device_id)
 
     def _add_host(self, host: dict):
         host_id = host["id"]
@@ -126,7 +150,7 @@ class RoutingVNF:
         # removing node will also remove all connected edges
         if host_id in self.net:
             self.net.remove_node(host_id)
-        self.print("Host (Remove):", host_id)
+            self.print("Host (Remove):", host_id)
 
     async def _listen_events(self, queue: asyncio.Queue):
         async for event, data in self.api_client.listen_events():
@@ -150,22 +174,16 @@ class RoutingVNF:
 
         # Add switches
         # NOTE: we consider every device is a switch.
-        switches = (device["id"] for device in topology["devices"])
-        self.net.add_nodes_from(switches)
+        for switch in topology["devices"]:
+            self._add_device(switch)
 
         # Add hosts
         for host in topology["hosts"]:
             self._add_host(host)
 
         # Add links
-        # one connection has bidirectional links
-        # so, we only save the source port
-        links = (
-            (link["src"]["id"], link["dst"]["id"], dict(port=link["src"]["port"]))
-            for link in topology["links"]
-            if link["type"] == "DIRECT" and link["state"] == "ACTIVE"
-        )
-        self.net.add_edges_from(links)
+        for link in topology["links"]:
+            self._add_link(link)
 
     def visualize(self):
         hosts = []
@@ -191,7 +209,7 @@ class RoutingVNF:
 
         try:
             # listen events eagerly to avoid race condition during loading topology
-            event_loop.create_task(self._listen_events(event_queue))
+            listener = event_loop.create_task(self._listen_events(event_queue))
 
             # load topology
             print("Loading topology...")
@@ -200,7 +218,11 @@ class RoutingVNF:
 
             # consume events
             print("Listening on events... Hit '<ctrl-c>' to exit.")
-            event_loop.run_until_complete(self._consume_events(event_queue))
+            event_loop.run_until_complete(
+                tasks.gather(
+                    listener, self._consume_events(event_queue), loop=event_loop
+                )
+            )
         finally:
             if self.debug:
                 print("Taking a graph snapshot...")

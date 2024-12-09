@@ -23,12 +23,9 @@ class API:
             yield event.event, json.loads(event.data)
 
     # TODO: Convert json to dto
-    async def get_topology(self) -> Optional[dict]:
-        async with aiohttp.ClientSession(auth=self.auth) as session:
+    async def get_topology(self) -> dict:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
             async with session.get(urljoin(self.base_url, "topology")) as resp:
-                if resp.status == HTTPStatus.OK.value:
-                    return await resp.json()
-                else:
-                    self.logger.error("Update topology error:", resp.status)
-                    self.logger.error("Update topology error:", await resp.text())
-                    return None
+                return await resp.json()

@@ -146,8 +146,7 @@ class RoutingVNF:
         # wait at least 1s for event listener
         await asyncio.sleep(1)
 
-        async with self.api_client as session:
-            topology = await session.update_topology()
+        topology = await self.api_client.get_topology()
 
         # Add switches
         # NOTE: we consider every device is a switch.

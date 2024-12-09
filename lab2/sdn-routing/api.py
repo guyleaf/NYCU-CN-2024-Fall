@@ -15,31 +15,6 @@ class API:
         self.auth = aiohttp.BasicAuth(username, password)
         self.logger = logging.getLogger(__name__)
 
-    def __enter__(self) -> None:
-        raise TypeError("Use async with instead")
-
-    def __exit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> None:
-        # __exit__ should exist in pair with __enter__ but never executed
-        pass  # pragma: no cover
-
-    async def __aenter__(self) -> "API":
-        self.session = aiohttp.ClientSession(auth=self.auth)
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> None:
-        await self.session.close()
-        self.session = None
-
     # TODO: Convert json to dto
     async def listen_events(self) -> AsyncGenerator[Tuple[str, dict], None]:
         async for event in aiosseclient(
@@ -48,11 +23,12 @@ class API:
             yield event.event, json.loads(event.data)
 
     # TODO: Convert json to dto
-    async def update_topology(self) -> Optional[dict]:
-        async with self.session.get(urljoin(self.base_url, "topology")) as resp:
-            if resp.status == HTTPStatus.OK.value:
-                return await resp.json()
-            else:
-                self.logger.error("Update topology error:", resp.status)
-                self.logger.error("Update topology error:", await resp.text())
-                return None
+    async def get_topology(self) -> Optional[dict]:
+        async with aiohttp.ClientSession(auth=self.auth) as session:
+            async with session.get(urljoin(self.base_url, "topology")) as resp:
+                if resp.status == HTTPStatus.OK.value:
+                    return await resp.json()
+                else:
+                    self.logger.error("Update topology error:", resp.status)
+                    self.logger.error("Update topology error:", await resp.text())
+                    return None

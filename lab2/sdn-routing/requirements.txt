@@ -1,0 +1,4 @@
+aiohttp
+networkx ~= 3.1.0
+matplotlib ~= 3.7.5
+rich

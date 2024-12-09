@@ -23,10 +23,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 
 /**
- * Sample web resource.
+ * Routing web resource.
  */
 @Path("sample")
-public class AppWebResource extends AbstractWebResource {
+public class RoutingWebResource extends AbstractWebResource {
 
     /**
      * Get hello world greeting.
@@ -34,7 +34,6 @@ public class AppWebResource extends AbstractWebResource {
      * @return 200 OK
      */
     @GET
-    @Path("")
     public Response getGreeting() {
         ObjectNode node = mapper().createObjectNode().put("hello", "world");
         return ok(node).build();

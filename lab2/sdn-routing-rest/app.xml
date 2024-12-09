@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<app name="org.sdnlab.routingrest" origin="SDN Lab" version="1.0.0"
+        title="REST APIs for remote routing" category="Integration" url="http://onosproject.org"
+        featuresRepo="mvn:${project.groupId}/${project.artifactId}/${project.version}/xml/features"
+        features="${project.artifactId}" apps="">
+    <description>${project.description}</description>
+    <artifact>mvn:${project.groupId}/${project.artifactId}/${project.version}</artifact>
+    <artifact>mvn:org.glassfish.jersey.media/jersey-media-sse/2.27</artifact>
+</app>

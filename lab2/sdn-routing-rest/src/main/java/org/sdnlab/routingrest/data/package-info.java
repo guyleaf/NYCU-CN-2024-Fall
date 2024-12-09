@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package org.sdnlab.routingrest;
-
-import org.onlab.rest.AbstractWebApplication;
-
-import java.util.Set;
-
 /**
- * Sample REST API web application.
+ * ONOS rest archetype.
  */
-public class AppWebApplication extends AbstractWebApplication {
-    @Override
-    public Set<Class<?>> getClasses() {
-        return getClasses(AppWebResource.class);
-    }
-}
+package org.sdnlab.routingrest.data;

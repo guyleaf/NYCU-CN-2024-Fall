@@ -7,13 +7,13 @@ public class HostDto {
     public final String mac;
     public final short vlan;
 
-    public final DevicePointDto location;
+    public final ConnectPointDto location;
 
     public HostDto(Host host) {
         id = host.id().toString();
         mac = host.mac().toString();
         vlan = host.vlan().id();
 
-        location = new DevicePointDto(host.location());
+        location = new ConnectPointDto(host.location());
     }
 }

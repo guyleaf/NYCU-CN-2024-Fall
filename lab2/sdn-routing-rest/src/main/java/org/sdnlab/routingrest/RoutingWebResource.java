@@ -15,28 +15,81 @@
  */
 package org.sdnlab.routingrest;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.onosproject.rest.AbstractWebResource;
+import org.sdnlab.routingrest.data.RouteDto;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
+// import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
  * Routing web resource.
  */
-@Path("sample")
+@Path("routes")
 public class RoutingWebResource extends AbstractWebResource {
 
-    /**
-     * Get hello world greeting.
-     *
-     * @return 200 OK
-     */
-    @GET
-    public Response getGreeting() {
-        ObjectNode node = mapper().createObjectNode().put("hello", "world");
-        return ok(node).build();
+    private final RoutingService routingService = getService(RoutingService.class);
+
+    private <T> List<T> parseListOfObjectsFromStream(InputStream stream, Class<T> expected) {
+        ObjectMapper map = mapper();
+        CollectionType collectionType = map.getTypeFactory().constructCollectionType(List.class, expected);
+        try {
+            return map.readValue(stream, collectionType);
+        } catch (Exception e) {
+            throw new BadRequestException("Unable to parse Route request", e);
+        }
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RouteDto> getRoutes() {
+        List<RouteDto> routes = routingService.getRoutes();
+        return routes;
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addRoutes(InputStream stream) {
+        List<RouteDto> routes = parseListOfObjectsFromStream(stream, RouteDto.class);
+        List<RouteDto> routeIds = routingService.addRoutes(routes);
+        return Response.status(Response.Status.CREATED).entity(routeIds).build();
+    }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateRoutes(InputStream stream) {
+        List<RouteDto> routes = parseListOfObjectsFromStream(stream, RouteDto.class);
+        routingService.updateRoutes(routes);
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response deleteRoutes(InputStream stream) {
+        List<RouteDto> routes = parseListOfObjectsFromStream(stream, RouteDto.class);
+        routingService.deleteRoutes(routes);
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @POST
+    @Path("reset")
+    @Consumes(MediaType.TEXT_PLAIN)
+    public Response clear() {
+        routingService.clear();
+        return Response.ok().build();
+    }
 }

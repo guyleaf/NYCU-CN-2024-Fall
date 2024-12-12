@@ -19,14 +19,20 @@ import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.onosproject.event.Event;
+import org.onosproject.net.DeviceId;
+import org.onosproject.net.device.DeviceEvent;
+import org.onosproject.net.device.DeviceListener;
+import org.onosproject.net.device.DeviceService;
 import org.onosproject.net.host.HostEvent;
 import org.onosproject.net.host.HostListener;
 import org.onosproject.net.host.HostService;
 import org.onosproject.net.link.LinkEvent;
+import org.onosproject.net.link.LinkListener;
 import org.onosproject.net.topology.TopologyEvent;
 import org.onosproject.net.topology.TopologyListener;
 import org.onosproject.net.topology.TopologyService;
 import org.onosproject.rest.AbstractWebResource;
+import org.sdnlab.routingrest.data.DeviceEventDto;
 import org.sdnlab.routingrest.data.HostEventDto;
 import org.sdnlab.routingrest.data.LinkEventDto;
 import org.slf4j.Logger;
@@ -45,24 +51,27 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
- * Routing Event web resource.
+ * Event web resource.
  */
 
 @Singleton
 @Path("events")
-public class RoutingEventWebResource extends AbstractWebResource {
+public class EventWebResource extends AbstractWebResource {
     private SseBroadcaster broadcaster = new SseBroadcaster();
 
     private final TopologyService topologyService = getService(TopologyService.class);
+    private final DeviceService deviceService = getService(DeviceService.class);
     private final HostService hostService = getService(HostService.class);
 
     private TopologyListener topologyListener = new InternalTopologyListener();
+    private DeviceListener deviceListener = new InternalDeviceListener();
     private HostListener hostListener = new InternalHostListener();
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public RoutingEventWebResource() {
+    public EventWebResource() {
         topologyService.addListener(topologyListener);
+        deviceService.addListener(deviceListener);
         hostService.addListener(hostListener);
         log.info("Initialized!");
     }
@@ -76,19 +85,12 @@ public class RoutingEventWebResource extends AbstractWebResource {
     // log.info("Stopped!");
     // }
 
-    private void broadcastTopoEvent(List<Event> events) {
-        List<LinkEventDto> data = new ArrayList<>();
-        for (Event event : events) {
-            if (event instanceof LinkEvent) {
-                data.add(new LinkEventDto((LinkEvent) event));
-            }
-        }
-
-        broadcast("topology", data);
-    }
-
-    private void broadcastHostEvent(HostEvent event) {
-        broadcast("host", new HostEventDto(event));
+    @GET
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public EventOutput listenEvents() {
+        final EventOutput eventOutput = new EventOutput();
+        broadcaster.add(eventOutput);
+        return eventOutput;
     }
 
     private <T> void broadcast(String name, T data) {
@@ -106,28 +108,53 @@ public class RoutingEventWebResource extends AbstractWebResource {
         }
     }
 
-    @GET
-    @Produces(MediaType.SERVER_SENT_EVENTS)
-    public EventOutput listenEvents() {
-        final EventOutput eventOutput = new EventOutput();
-        broadcaster.add(eventOutput);
-        return eventOutput;
-    }
-
     private class InternalTopologyListener implements TopologyListener {
         @Override
         public void event(TopologyEvent event) {
-            List<Event> reasons = event.reasons();
-            if (reasons != null) {
-                broadcastTopoEvent(reasons);
+            List<LinkEventDto> data = new ArrayList<>();
+            for (Event reason : event.reasons()) {
+                if (reason instanceof LinkEvent) {
+                    LinkEvent linkEvent = (LinkEvent) reason;
+                    data.add(new LinkEventDto(linkEvent));
+                }
             }
+            if (data.size() > 0) {
+                broadcast("topology", data);
+            }
+        }
+
+        @Override
+        public boolean isRelevant(TopologyEvent event) {
+            // only listen on device changed to reduce bandwidth usage
+            return event.reasons() != null;
+        }
+    }
+
+    private class InternalLinkListener implements LinkListener {
+        @Override
+        public void event(LinkEvent event) {
+            broadcast("link", new LinkEventDto(event));
+        }
+    }
+
+    private class InternalDeviceListener implements DeviceListener {
+        @Override
+        public void event(DeviceEvent event) {
+            DeviceId deviceId = event.subject().id();
+            broadcast("device", new DeviceEventDto(event, deviceService.isAvailable(deviceId)));
+        }
+
+        @Override
+        public boolean isRelevant(DeviceEvent event) {
+            // only listen on device changed to reduce bandwidth usage
+            return event.type().name().startsWith("DEVICE_");
         }
     }
 
     private class InternalHostListener implements HostListener {
         @Override
         public void event(HostEvent event) {
-            broadcastHostEvent(event);
+            broadcast("host", new HostEventDto(event));
         }
     }
 }

@@ -1,8 +1,6 @@
-from http import HTTPStatus
 import json
 import logging
-from types import TracebackType
-from typing import AsyncGenerator, Optional, Tuple, Type
+from typing import AsyncGenerator, List, Tuple
 from urllib.parse import urljoin
 import aiohttp
 
@@ -29,3 +27,46 @@ class API:
         ) as session:
             async with session.get(urljoin(self.base_url, "topology")) as resp:
                 return await resp.json()
+
+    async def get_routes(self) -> List[dict]:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
+            async with session.get(urljoin(self.base_url, "routes")) as resp:
+                return await resp.json()
+
+    async def add_routes(self, routes: List[dict]) -> List[dict]:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
+            async with session.post(
+                urljoin(self.base_url, "routes"), json=routes
+            ) as resp:
+                return await resp.json()
+
+    async def update_routes(self, routes: List[dict]) -> None:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
+            async with session.put(
+                urljoin(self.base_url, "routes"), json=routes
+            ) as resp:
+                pass
+
+    async def delete_routes(self, routes: List[dict]) -> None:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
+            async with session.delete(
+                urljoin(self.base_url, "routes"), json=routes
+            ) as resp:
+                pass
+
+    async def clear_routes(self) -> None:
+        async with aiohttp.ClientSession(
+            auth=self.auth, raise_for_status=True
+        ) as session:
+            async with session.post(
+                urljoin(self.base_url, "routes/reset"), data=""
+            ) as resp:
+                pass

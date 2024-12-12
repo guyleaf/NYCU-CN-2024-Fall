@@ -1,12 +1,13 @@
 import argparse
 import asyncio
 import json
-from pprint import pprint
 import sys
+from pprint import pprint
 from urllib.parse import urljoin
-from aiosseclient import aiosseclient
+
 import aiohttp
 
+from aiosseclient import aiosseclient
 from api import API
 from routing import RoutingVNF
 

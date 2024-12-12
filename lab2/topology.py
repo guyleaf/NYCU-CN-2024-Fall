@@ -87,7 +87,6 @@ class Lab2Topo(Topo):
         self.addLink(s6, s7)
 
 
-
 if __name__ == "__main__":
     assert sys.version_info >= (3, 8), "The python version should be >= 3.8."
     args = parse_args()
@@ -110,15 +109,21 @@ if __name__ == "__main__":
         switch=switch,
         xterms=args.debug,
         waitConnected=True,
+        # autoStaticArp=True,
         # fix mac  for keeping the intents or rules
         # autoSetMaddressesacs=True,
     )
 
     # run tests
     net.start()
+
+    print("Pinging the hosts to let the controller know... Please wait a few seconds")
+    net.pingAll(timeout=0.01)
+    # net.pingAll()
+
     if args.debug:
         CLI(net)
     else:
-        dumpNodeConnections(net.hosts)
         net.pingAll()
+
     net.stop()

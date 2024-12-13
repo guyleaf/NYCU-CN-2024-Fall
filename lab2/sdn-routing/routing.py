@@ -108,6 +108,7 @@ class RoutingVNF:
     async def _listen_events(self, queue: asyncio.Queue):
         async for event, data in self.api_client.listen_events():
             queue.put_nowait((event, data))
+        raise RuntimeError("The listener is closed.")
 
     async def _consume_events(self, queue: asyncio.Queue):
         while True:
@@ -206,6 +207,7 @@ class RoutingVNF:
         # wait at least 1s for event listener
         await asyncio.sleep(1)
 
+        self.net.clear()
         topology = await self.api_client.get_topology()
 
         # Add switches
@@ -245,7 +247,9 @@ class RoutingVNF:
         plt.savefig("graph.png", bbox_inches="tight", dpi=150)
 
     def run(self):
-        event_loop = asyncio.get_event_loop()
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+
         event_queue = asyncio.Queue(loop=event_loop)
         self.manager = RouteManager(self.api_client)
 
@@ -254,15 +258,15 @@ class RoutingVNF:
             listener_task = event_loop.create_task(self._listen_events(event_queue))
 
             # load topology
-            print("Loading topology and routes...")
+            print("[yellow]Loading topology and routes...")
             event_loop.run_until_complete(self._setup())
-            print("Loaded topology and routes successfully.")
+            print("[green]Loaded topology and routes successfully.")
 
             # run manager
             manager_task = event_loop.create_task(self.manager.run())
 
             # consume events
-            print("Listening on events... Hit '<ctrl-c>' to exit.")
+            print("[green]Listening on events... Hit '[blue]<ctrl-c>[/blue]' to exit.")
             event_loop.run_until_complete(
                 asyncio.gather(
                     listener_task, manager_task, self._consume_events(event_queue)

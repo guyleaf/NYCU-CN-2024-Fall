@@ -16,7 +16,7 @@ class API:
     # TODO: Convert json to dto
     async def listen_events(self) -> AsyncGenerator[Tuple[str, dict], None]:
         async for event in aiosseclient(
-            urljoin(self.base_url, "events"), auth=self.auth
+            urljoin(self.base_url, "events"), auth=self.auth, raise_for_status=True
         ):
             yield event.event, json.loads(event.data)
 

@@ -1,19 +1,11 @@
 import argparse
-import asyncio
-import json
 import sys
-from pprint import pprint
-from urllib.parse import urljoin
+import time
 
-import aiohttp
+from rich import print
 
-from aiosseclient import aiosseclient
 from api import API
 from routing import RoutingVNF
-
-ONOS_AUTH = aiohttp.BasicAuth("onos", "rocks")
-
-BASE_URL = "http://172.18.0.2:8181/onos/sdn-routing-rest/"
 
 
 def parse_args():
@@ -49,4 +41,10 @@ if __name__ == "__main__":
 
     api_client = API(**args)
     routing_vnf = RoutingVNF(api_client, debug=debug)
-    routing_vnf.run()
+
+    while True:
+        try:
+            routing_vnf.run()
+        except Exception:
+            print("[yellow bold]Trying to reconnect...")
+            time.sleep(3)

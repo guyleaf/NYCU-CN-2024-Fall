@@ -5,7 +5,7 @@ from collections import defaultdict
 from copy import deepcopy
 from enum import Flag, auto
 from itertools import combinations, repeat
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import networkx as nx
 from rich import print
@@ -78,7 +78,7 @@ class RouteManager:
         if len(routes) == 0:
             return
 
-        print("Route (Add):", len(routes), "with possible duplicates")
+        print("Route (Add):", len(routes))
 
         # remote request
         content = [route.as_dict() for route in routes]

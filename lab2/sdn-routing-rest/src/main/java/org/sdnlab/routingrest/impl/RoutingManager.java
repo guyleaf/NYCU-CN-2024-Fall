@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.onlab.packet.VlanId;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
 import org.onosproject.core.IdGenerator;
@@ -90,7 +91,7 @@ public class RoutingManager implements RoutingService {
                 .matchInPort(srcPort)
                 .matchEthDst(dst.mac());
 
-        if (src.vlan() != null) {
+        if (src.vlan() != VlanId.NONE) {
             selectorBuilder.matchVlanId(src.vlan());
         }
 

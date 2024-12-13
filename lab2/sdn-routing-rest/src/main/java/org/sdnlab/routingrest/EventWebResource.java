@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -76,15 +77,20 @@ public class EventWebResource extends AbstractWebResource {
         log.info("Initialized!");
     }
 
-    // FIXME: Support destroying
-    // @PreDestroy
-    // public void cleanUp() {
-    // topoBroadcaster.closeAll();
-    // topologyService.removeListener(topologyListener);
-    // hostBroadcaster.closeAll();
-    // log.info("Stopped!");
-    // }
+    @PreDestroy
+    public void cleanUp() {
+        broadcaster.closeAll();
+        hostService.removeListener(hostListener);
+        deviceService.removeListener(deviceListener);
+        topologyService.removeListener(topologyListener);
+        log.info("Stopped!");
+    }
 
+    /**
+     * Listens on topology events.
+     *
+     * @return SSE event stream
+     */
     @GET
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public EventOutput listenEvents() {

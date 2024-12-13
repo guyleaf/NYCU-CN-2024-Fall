@@ -9,4 +9,5 @@
     <artifact>mvn:org.glassfish.jersey.media/jersey-media-json-jackson/2.27</artifact>
     <artifact>mvn:org.glassfish.jersey.ext/jersey-entity-filtering/2.27</artifact>
     <artifact>mvn:com.fasterxml.jackson.module/jackson-module-jaxb-annotations/2.11.0</artifact>
+    <artifact>mvn:org.glassfish/javax.annotation/3.1.1</artifact>
 </app>

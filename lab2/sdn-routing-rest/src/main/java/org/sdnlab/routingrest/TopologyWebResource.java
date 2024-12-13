@@ -48,9 +48,9 @@ public class TopologyWebResource extends AbstractWebResource {
     private final HostService hostService = getService(HostService.class);
 
     /**
-     * Get hello world greeting.
+     * Gets all topology information.
      *
-     * @return 200 OK
+     * @return a json with links, devices, hosts
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -66,6 +66,11 @@ public class TopologyWebResource extends AbstractWebResource {
         return ok(node).build();
     }
 
+    /**
+     * Gets all links between devices.
+     *
+     * @return a json with a list of links
+     */
     @GET
     @Path("links")
     @Produces(MediaType.APPLICATION_JSON)
@@ -77,6 +82,11 @@ public class TopologyWebResource extends AbstractWebResource {
         return ok(node).build();
     }
 
+    /**
+     * Gets all devices.
+     *
+     * @return a json with a list of devices
+     */
     @GET
     @Path("devices")
     @Produces(MediaType.APPLICATION_JSON)
@@ -88,6 +98,11 @@ public class TopologyWebResource extends AbstractWebResource {
         return ok(node).build();
     }
 
+    /**
+     * Gets all hosts.
+     *
+     * @return a json with a list of hosts
+     */
     @GET
     @Path("hosts")
     @Produces(MediaType.APPLICATION_JSON)

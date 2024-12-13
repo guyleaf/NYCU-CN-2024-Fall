@@ -20,7 +20,6 @@ import org.sdnlab.routingrest.data.RouteDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 
-// import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -53,6 +52,11 @@ public class RoutingWebResource extends AbstractWebResource {
         }
     }
 
+    /**
+     * Gets all routes.
+     *
+     * @return 200 OK, a list of routes
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<RouteDto> getRoutes() {
@@ -60,6 +64,12 @@ public class RoutingWebResource extends AbstractWebResource {
         return routes;
     }
 
+    /**
+     * Creates new routes.
+     *
+     * @param stream a list of new routes
+     * @return 201 Created
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -69,22 +79,39 @@ public class RoutingWebResource extends AbstractWebResource {
         return Response.status(Response.Status.CREATED).entity(routeIds).build();
     }
 
+    /**
+     * Updates old routes with new routes.
+     *
+     * @param stream a list of new routes
+     * @return 200 OK
+     */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateRoutes(InputStream stream) {
         List<RouteDto> routes = parseListOfObjectsFromStream(stream, RouteDto.class);
         routingService.updateRoutes(routes);
-        return Response.status(Response.Status.NO_CONTENT).build();
+        return Response.ok().build();
     }
 
+    /**
+     * Deletes routes by route id.
+     *
+     * @param stream a list of routes (route id only)
+     * @return 200 OK
+     */
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
     public Response deleteRoutes(InputStream stream) {
         List<RouteDto> routes = parseListOfObjectsFromStream(stream, RouteDto.class);
         routingService.deleteRoutes(routes);
-        return Response.status(Response.Status.NO_CONTENT).build();
+        return Response.ok().build();
     }
 
+    /**
+     * Clear all routes.
+     *
+     * @return 200 OK
+     */
     @POST
     @Path("reset")
     @Consumes(MediaType.TEXT_PLAIN)

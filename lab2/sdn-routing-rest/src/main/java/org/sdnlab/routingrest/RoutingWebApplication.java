@@ -21,7 +21,7 @@ import org.onlab.rest.AbstractWebApplication;
 import java.util.Set;
 
 /**
- * Sample REST API web application.
+ * Routing REST API web application.
  */
 public class RoutingWebApplication extends AbstractWebApplication {
     @Override

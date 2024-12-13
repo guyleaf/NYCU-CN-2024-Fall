@@ -98,6 +98,8 @@ So, the most difficult part is how to synchronize the states between the control
    git clone https://github.com/opennetworkinglab/onos.git
    
    cd onos
+   git checkout 2.7.0
+   
    cat << EOF >> ~/.bash_profile
    export ONOS_ROOT="`pwd`"
    source $ONOS_ROOT/tools/dev/bash_profile

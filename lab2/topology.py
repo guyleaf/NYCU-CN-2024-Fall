@@ -117,13 +117,13 @@ if __name__ == "__main__":
     # run tests
     net.start()
 
-    print("Pinging the hosts to let the controller know... Please wait a few seconds")
+    print(
+        "Pinging the hosts to let the controller know... Please wait for a few seconds"
+    )
     net.pingAll(timeout=0.01)
-    # net.pingAll()
+    net.pingAll()
 
     if args.debug:
         CLI(net)
-    else:
-        net.pingAll()
 
     net.stop()

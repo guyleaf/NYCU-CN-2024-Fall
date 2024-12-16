@@ -14,7 +14,7 @@
 ## Lab Requirements
 
 1. Please design and develop a VNF of dual-path routing.
-   **The dual-path routing is not practical, such as the need for flagging if the routes worked or not....**
+   **The dual-path routing is not practical, such as the need for flagging/checking if the routes worked or not....**
 
    **So, I change to apply routes on demand directly. (multi-path routing)**
 
@@ -35,38 +35,6 @@
 | Hosts   | IP                  | Ethernet |
 | ------- | ------------------- | -------- |
 | H1 ~ H9 | 10.0.0.1 ~ 10.0.0.9 | random   |
-
-## Result
-![Result](assets/result.png)
-
-![Remove s2](assets/remove_s2.png)
-
-## Design (multi-path routing)
-
-#### Requirements
-
-In normal scenario,
-
-1. The VNF should notice the topology **changed** to apply/remove routes to switches on demand.
-2. The VNF can be **stopped** without breakdown.
-3. The VNF can be **resumed** without losing the previous valid routes.
-4. The APP should **inform** the VNF the topology is changed.
-5. The APP should **store** the routes to let the VNF to retrieve routing information.
-
-So, the most difficult part is how to synchronize the states between the controller and VNF.
-
-#### Architecture
-
-![Architecture](assets/arch.png)
-
-#### API
-
-| API     | Protocol |
-| ------- | -------- |
-| /events | SSE      |
-| Others  | HTTP     |
-
-![API](assets/api.png)
 
 ## Setup
 
@@ -146,12 +114,71 @@ So, the most difficult part is how to synchronize the states between the control
 8. Run mininet
 
    ```python
+   # (NOTE: first pingall is for host discovery)
    # run pingall
    python3 topology.py
    
    # enter cli
    python3 topology.py --debug
    ```
+
+## Result
+
+* Startup![Result](assets/result.png)
+
+* Remove S2 switch![Remove s2](assets/remove_s2.png)
+
+## Design (multi-path routing)
+
+#### Requirements
+
+In order to find the shortest paths for each pair of hosts, we need to maintain a topology graph to find it.
+
+Therefore, we need to fulfill these requirements below.
+
+1. The VNF should **maintain** a topology graph to find the shortest path.
+2. The VNF should **notice** the topology changed to apply/remove routes to switches on demand.
+3. The VNF can be **stopped** without breakdown.
+4. The VNF can be **resumed** with the previous valid routes.
+5. The APP should **inform** the VNF the topology is changed.
+6. The APP should **store** the routes to let the VNF to retrieve routing information.
+
+The most difficult part is how to synchronize the states between the controller and VNF.
+
+#### Architecture & Flow Chart
+
+![Architecture](assets/arch.png)
+
+#### API
+
+| API     | Protocol |
+| ------- | -------- |
+| /events | SSE      |
+| Others  | HTTP     |
+
+![API](assets/api.png)
+
+#### Actions on topology events
+
+| ONOS Topology type | Description                                     |
+| ------------------ | ----------------------------------------------- |
+| LINK               | link between interconnected switches            |
+| DEVICE             | switch                                          |
+| HOST               | host and link between host and connected switch |
+
+| Event                                     | Topology actions                                             | Route actions                                                |
+| ----------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| LINK_ADDED                                | Add a link                                                   | Update missing routes (pairs of hosts)                       |
+| LINK_UPDATED (ACTIVE)                     | Add a link                                                   | Update missing routes (pairs of hosts)                       |
+| LINK_UPDATED (INACTIVE)                   | Remove the link                                              | Remove the broken routes, Update missing routes (pairs of hosts) |
+| LINK_REMOVED                              | Remove the link                                              | Remove the broken routes, Update missing routes (pairs of hosts) |
+| DEVICE_ADDED                              | Add a node                                                   |                                                              |
+| DEVICE_REMOVED                            | Remove the node                                              | Remove the broken routes, Update missing routes (pairs of hosts) |
+| DEVICE_AVAILABILITY_CHANGED (available)   | Add a node                                                   |                                                              |
+| DEVICE_AVAILABILITY_CHANGED (unavailable) | Remove the node                                              | Remove the broken routes, Update missing routes (pairs of hosts) |
+| HOST_ADDED                                | Add a node and a link between host and switch                | Update missing routes (pairs of hosts)                       |
+| HOST_MOVED                                | Remove the node and link, Add a node and a link between new host and switch | Remove old routes, Update missing routes (pairs of hosts)    |
+| HOST_REMOVED                              | Remove the node and link                                     | Remove related routes                                        |
 
 ## Implementation
 
@@ -279,6 +306,10 @@ About the implementation details, please check the source code.
 
 * **RoutingWebResource.java**: CRUD for routes and flow rules. (**NOTE: there is no routing logic in it**)
 
+  * **Route table**: store routes (only store the path), a map from route id to path
+  
+  * **Route to flows table**: store flow rules, a map from route id to flows
+  
   ```java
   private FlowRule installFlowRule(Host src, Host dst, DeviceId deviceId, PortNumber srcPort, PortNumber dstPort) {
       TrafficSelector.Builder selectorBuilder = DefaultTrafficSelector
@@ -328,13 +359,11 @@ About the implementation details, please check the source code.
       return flows;
   }
   ```
-
-  * **Route table**: store routes (only store the path)
-  * **Route to flows table**: store flow rules
+  
 
 ---
 
-### Routing VNF (Hard to describe QQQQ)
+### Routing VNF (Hard to describe briefly QQQQ)
 
 About the implementation details, please check the source code.
 
@@ -375,6 +404,8 @@ def run(self):
 ```
 
 #### Components
+
+* **Topology graph**: store topology in order to find shortest path. (use `networkx` python library)
 
 * **Topology listener and consumer**: listen on API and take an action on event.
 
@@ -449,12 +480,24 @@ def run(self):
           self._remove_host(host)
   ```
 
-* **Topology graph**: store topology in order to find shortest path. (use `networkx` python library)
-
 * **Route manager**
 
-  * Find the shortest path by dijkstra and add new routes.
+  * Store the routes for cache
 
+    ```python
+    # (src, dst): Optional[list]
+    self.routes: Dict[ConnectPoint, Dict[ConnectPoint, Optional[Route]]] = dict()
+    # (src link, dst link): set((src, dst), ...)
+    self.link_to_routes: Dict[
+        ConnectPoint,
+        Dict[ConnectPoint, Set[Tuple[ConnectPoint, ConnectPoint]]],
+    ] = defaultdict(lambda: defaultdict(set))
+    ```
+  
+  * Find the shortest path by dijkstra and add new routes to local and remote.
+  
+    (**For the corresponding actions, please check the route actions column in [Actions on topology events](#Actions on topology events) for details**)
+  
     ```python
     def _find_path(self, net: nx.DiGraph, src: str, dst: str) -> Optional[List[str]]:
         assert isinstance(src, str) and isinstance(dst, str)
@@ -463,8 +506,13 @@ def run(self):
         except nx.NetworkXNoPath:
             return None
     ```
-
+  
     ```python
+    self.action_handlers = {
+        Action.CREATE: self._add_batch_routes,
+        Action.DELETE: self._remove_batch_routes,
+    }
+    
     def _add_route(self, net: nx.DiGraph, src: ConnectPoint, dst: ConnectPoint) -> bool:
         if self.routes[src][dst] is not None:
             raise RuntimeError(f"The route between ({src}, {dst}) already exists.")
@@ -487,41 +535,6 @@ def run(self):
         # add a route
         self.route_queue.put_nowait((route, Action.CREATE, None))
         return True
-    
-    def _remove_route(
-        self,
-        net: nx.DiGraph,
-        src: ConnectPoint,
-        dst: ConnectPoint,
-        update_after_remove: bool = True,
-    ) -> bool:
-        def __callback():
-            self.update_missing_routes(net)
-    
-        if src in self.routes and dst in self.routes[src]:
-            route = self.routes[src][dst]
-        else:
-            return False
-    
-        if route is None:
-            return False
-    
-        callback = None
-        if update_after_remove:
-            callback = __callback
-    
-        # delete route
-        self.route_queue.put_nowait((route, Action.DELETE, callback))
-        return True
-    ```
-
-  * Remove invalid routes and apply new routes.
-
-    ```python
-    self.action_handlers = {
-        Action.CREATE: self._add_batch_routes,
-        Action.DELETE: self._remove_batch_routes,
-    }
     
     async def _consume_route_changes(self):
         prev_action = Action.CREATE
@@ -571,6 +584,38 @@ def run(self):
             self.routes[route.src][route.dst] = route
             # for src_device, dst_device in zip(devices[:-1], devices[1:]):
             #     self.link_to_routes[src_device][dst_device].add((route.src, route.dst))
+    ```
+  
+  * Remove routes from local and remote.
+  
+    (**For the corresponding actions, please check the route actions column in [Actions on topology events](#Actions on topology events) for details**)
+    
+    ```python
+    def _remove_route(
+        self,
+        net: nx.DiGraph,
+        src: ConnectPoint,
+        dst: ConnectPoint,
+        update_after_remove: bool = True,
+    ) -> bool:
+        def __callback():
+            self.update_missing_routes(net)
+    
+        if src in self.routes and dst in self.routes[src]:
+            route = self.routes[src][dst]
+        else:
+            return False
+    
+        if route is None:
+            return False
+    
+        callback = None
+        if update_after_remove:
+            callback = __callback
+    
+        # delete route
+        self.route_queue.put_nowait((route, Action.DELETE, callback))
+        return True
     
     async def _remove_batch_routes(self, routes: List[Route]):
         if len(routes) == 0:

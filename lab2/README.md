@@ -2,6 +2,11 @@
 
 [TOC]
 
+## TL;DR
+Implemented a VNF (Virtualized Network Function) for multi-path routing with self-recovery capability
+
+![Architecture](assets/arch.png)
+
 ## Environment
 
 1. Ubuntu 20.04 (5.15.0-125-generic)

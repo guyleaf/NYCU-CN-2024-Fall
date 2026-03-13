@@ -3,4 +3,4 @@
 
 ## Labs
 1. Lab1: SDN controller & Mininet
-2. Lab2: Routing NFV (from dual-path to multi-path)
+2. Lab2: Routing NFV (from dual-path to multi-path with self-recovery capability)

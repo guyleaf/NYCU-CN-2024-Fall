@@ -14,11 +14,12 @@
 ## Lab Requirements
 
 1. Please design and develop a VNF of dual-path routing.
+   
    **The dual-path routing is not practical, such as the need for flagging/checking if the routes worked or not....**
 
    **So, I change to apply routes on demand directly. (multi-path routing)**
 
-2. For each source & destination pair, find two shortest & most-disjoint paths (兩條經過最少相同路由器的路徑), and deploy the paths to all corresponding OpenFlow switches through controller (i.e., you define and develop Restful API
+3. For each source & destination pair, find two shortest & most-disjoint paths (兩條經過最少相同路由器的路徑), and deploy the paths to all corresponding OpenFlow switches through controller (i.e., you define and develop Restful API
    as well).
 
 ## Topology
